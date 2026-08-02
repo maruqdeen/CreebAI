@@ -17,6 +17,7 @@ is a small cost; the bot inventing an answer about someone's money is not.
 
 import json
 import logging
+import re
 import time
 from dataclasses import dataclass
 from typing import Protocol
@@ -128,6 +129,22 @@ class GroqJudge:
         if not self._api_key:
             return Verdict.failed("GROQ_API_KEY is not set")
 
+        verdict = self._ask(message, kb_text, rules)
+
+        # A rate limit is a wait, not a failure. Groq says how long, and the
+        # whole knowledge base goes into every prompt, so a busy minute can
+        # exhaust the tokens-per-minute allowance on a handful of messages.
+        # Escalating those to a human would bury the operator in questions the
+        # bot could answer perfectly well a moment later.
+        if verdict.error and "RateLimitError" in verdict.error:
+            wait = _retry_after(verdict.error)
+            log.warning("Groq rate limit hit; retrying in %.1fs", wait)
+            time.sleep(wait)
+            verdict = self._ask(message, kb_text, rules)
+
+        return verdict
+
+    def _ask(self, message: str, kb_text: str, rules: list[str]) -> Verdict:
         started = time.monotonic()
         try:
             completion = self.client.chat.completions.create(
@@ -152,6 +169,24 @@ class GroqJudge:
             return Verdict.failed(f"{type(exc).__name__}: {exc}", elapsed)
 
         return parse_verdict(raw, latency_ms=elapsed)
+
+
+#: Groq puts the wait in the message: "Please try again in 10.245s".
+_RETRY_AFTER = re.compile(r"try again in ([0-9.]+)s", re.IGNORECASE)
+
+#: Bounded so a long stated wait cannot hold a worker thread indefinitely.
+MAX_RETRY_WAIT = 15.0
+
+
+def _retry_after(error: str, default: float = 5.0) -> float:
+    match = _RETRY_AFTER.search(error or "")
+    if not match:
+        return default
+    try:
+        # A small margin, because the window is measured on Groq's clock.
+        return min(float(match.group(1)) + 0.5, MAX_RETRY_WAIT)
+    except ValueError:
+        return default
 
 
 def parse_verdict(raw: str, latency_ms: int | None = None) -> Verdict:
