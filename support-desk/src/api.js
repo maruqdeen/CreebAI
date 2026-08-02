@@ -10,27 +10,52 @@ const META_BASE = document
   .querySelector('meta[name="api-base"]')
   ?.getAttribute('content')
 
-export const API_BASE = (META_BASE ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
-
 /**
- * A bare name — no scheme, no dot — is not an address. The browser resolves it
- * relative to this page, so every call quietly hits the static site instead of
- * the API, which answers 200 with an empty body and produces an
- * incomprehensible JSON parse error.
+ * Work out where the API lives.
  *
- * Render's `fromService … property: host` yields exactly that: a service name.
+ * The configured value is baked in at build time, and hosts hand it over in
+ * several shapes. A bare name — no scheme, no dot — is not an address: the
+ * browser resolves it relative to this page, so every call quietly hits the
+ * static host instead, which answers 200 with an empty body. Render's
+ * `fromService … property: host` yields exactly that, a service name.
+ *
+ * When the page is itself on a dotted domain, a sibling service under the same
+ * parent domain is the only thing that name can reasonably mean, so derive it
+ * rather than failing. `creeb-support-bot` on `creeb-support-panel.onrender.com`
+ * becomes `https://creeb-support-bot.onrender.com`.
  */
-const API_BASE_LOOKS_WRONG =
-  !/^https?:\/\//.test(API_BASE) && !API_BASE.includes('.')
+function resolveApiBase(configured) {
+  const value = (configured ?? '').trim().replace(/\/+$/, '')
+  if (!value) return { base: 'http://127.0.0.1:8000', problem: null }
+  if (/^https?:\/\//.test(value)) return { base: value, problem: null }
+  if (value.includes('.')) return { base: `https://${value}`, problem: null }
 
-const MISCONFIGURED =
-  `The panel is pointed at "${API_BASE}", which is not an address. ` +
-  `Set VITE_API_BASE to the API's full URL (https://…) and rebuild with the ` +
-  `build cache cleared.`
+  // A bare service name. Derive a sibling host from this page's own domain.
+  const parent = location.hostname.split('.').slice(1).join('.')
+  if (parent.includes('.')) {
+    const derived = `${location.protocol}//${value}.${parent}`
+    console.warn(
+      `[support-desk] VITE_API_BASE is "${value}", which is a service name ` +
+        `rather than an address. Assuming ${derived}. Set it to the API's ` +
+        `full URL to remove the guesswork.`
+    )
+    return { base: derived, problem: null }
+  }
 
-if (API_BASE_LOOKS_WRONG) {
-  console.error(`[support-desk] ${MISCONFIGURED}`)
+  return {
+    base: value,
+    problem:
+      `The panel is pointed at "${value}", which is not an address. Set ` +
+      `VITE_API_BASE to the API's full URL (https://…) and rebuild with the ` +
+      `build cache cleared.`,
+  }
 }
+
+const resolved = resolveApiBase(META_BASE)
+export const API_BASE = resolved.base
+const MISCONFIGURED = resolved.problem
+
+if (MISCONFIGURED) console.error(`[support-desk] ${MISCONFIGURED}`)
 
 export class ApiError extends Error {
   constructor(message, { status = 0, offline = false, detail = null } = {}) {
@@ -89,7 +114,7 @@ export function toLogin() {
 }
 
 async function request(method, path, body, { anonymous = false } = {}) {
-  if (API_BASE_LOOKS_WRONG) {
+  if (MISCONFIGURED) {
     // Not flagged offline: this is a configuration fault, not an unreachable
     // service, and callers show a generic "cannot reach" message for offline
     // errors — which would bury the one sentence that explains the problem.
