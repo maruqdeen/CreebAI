@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     #: The service's own public URL, e.g. https://creeb-bot.onrender.com.
     #: Set in production; the Telegram webhook is registered against it.
     public_url: str = ""
+    #: Injected by Render with the real external URL. Used when PUBLIC_URL is
+    #: not set, which is the normal case — a blueprint's `fromService` with
+    #: `property: host` yields only the service *name*, not a URL, and
+    #: Telegram rejects that outright.
+    render_external_url: str = ""
     #: Extra browser origins allowed to call the API, comma separated.
     extra_cors_origins: str = ""
 
@@ -70,19 +75,45 @@ class Settings(BaseSettings):
     def bind_port(self) -> int:
         return self.port or self.api_port
 
+    @staticmethod
+    def _as_url(value: str) -> str:
+        """A usable https URL, or "".
+
+        Hosts hand these out in several shapes — a bare hostname, a service
+        name, a full URL with a trailing slash. Telegram will only accept a
+        real https URL, and a browser origin must have a scheme to match.
+        """
+        value = (value or "").strip().rstrip("/")
+        if not value:
+            return ""
+        if value.startswith(("http://", "https://")):
+            return value
+        # A bare name with no dot is a service name, not a host: unusable.
+        if "." not in value:
+            return ""
+        return f"https://{value}"
+
+    @property
+    def effective_public_url(self) -> str:
+        return self._as_url(self.public_url) or self._as_url(self.render_external_url)
+
     @property
     def use_webhook(self) -> bool:
-        """Webhook when a public URL is known, polling otherwise.
+        """Webhook when a usable public URL is known, polling otherwise.
 
         This is what keeps local development on polling with no extra flags
         while production runs the mode free hosting requires.
         """
-        return bool(self.public_url)
+        return bool(self.effective_public_url)
 
     @property
     def webhook_path(self) -> str:
         secret = self.telegram_webhook_secret or "unset"
         return f"/telegram/webhook/{secret}"
+
+    @property
+    def webhook_url(self) -> str:
+        return self.effective_public_url + self.webhook_path
 
     def cors_origins(self) -> list[str]:
         origins = [
@@ -90,7 +121,9 @@ class Settings(BaseSettings):
             "http://localhost:5190",
             "http://127.0.0.1:5190",
         ]
-        origins += [o.strip() for o in self.extra_cors_origins.split(",") if o.strip()]
+        origins += [
+            self._as_url(o) for o in self.extra_cors_origins.split(",") if o.strip()
+        ]
         # Preserve order, drop blanks and duplicates.
         return list(dict.fromkeys(o for o in origins if o))
 
@@ -169,8 +202,14 @@ class Settings(BaseSettings):
             gaps.append("SECRET_KEY (sessions cannot be signed)")
         if not self.admin_username or not self.admin_password_hash:
             gaps.append("ADMIN_USERNAME / ADMIN_PASSWORD_HASH (no one can log in)")
-        if self.public_url and not self.telegram_webhook_secret:
+        if self.use_webhook and not self.telegram_webhook_secret:
             gaps.append("TELEGRAM_WEBHOOK_SECRET (the webhook would be unverified)")
+        if self.public_url and not self._as_url(self.public_url):
+            gaps.append(
+                f"PUBLIC_URL is {self.public_url!r}, which is not a URL — a "
+                f"blueprint's `fromService: host` yields a service name, not an "
+                f"address. Unset it and let RENDER_EXTERNAL_URL be used."
+            )
         return gaps
 
 

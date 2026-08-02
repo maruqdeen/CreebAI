@@ -45,10 +45,9 @@ async def _serve(run_bot: bool, run_api: bool) -> None:
         if webhook_mode:
             # Deliveries arrive on the API's own port, so nothing extra listens.
             attach(application)
-            url = settings.public_url.rstrip("/") + settings.webhook_path
             try:
                 await application.bot.set_webhook(
-                    url=url,
+                    url=settings.webhook_url,
                     secret_token=settings.telegram_webhook_secret or None,
                     allowed_updates=["message"],
                     drop_pending_updates=True,
@@ -58,7 +57,7 @@ async def _serve(run_bot: bool, run_api: bool) -> None:
                     "Bot @%s on model %s — webhook registered at %s",
                     me.username,
                     settings.groq_model,
-                    settings.public_url.rstrip("/") + "/telegram/webhook/***",
+                    settings.effective_public_url + "/telegram/webhook/***",
                 )
             except Exception as exc:
                 # Keep serving. A crash here means no port is opened, the host

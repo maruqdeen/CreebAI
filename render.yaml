@@ -39,20 +39,18 @@ services:
         generateValue: true
 
       # --- Wiring ---------------------------------------------------------
-      # PUBLIC_URL is what switches the bot from polling to webhooks. Free
-      # instances sleep, and only inbound traffic wakes them — a webhook
-      # delivery is that traffic; a polling loop would simply die.
-      - key: PUBLIC_URL
-        fromService:
-          type: web
-          name: creeb-support-bot
-          property: host
-      # The panel is a separate origin, so it has to be allowed through CORS.
+      # PUBLIC_URL is deliberately NOT set here. `fromService … property: host`
+      # yields the service *name* ("creeb-support-bot"), not an address, and
+      # Telegram rejects that with no useful error. Render injects
+      # RENDER_EXTERNAL_URL with the real https URL, which the app reads
+      # instead — and that is what switches it from polling to webhooks.
+      #
+      # The panel is a separate origin, so the browser needs it allowed through
+      # CORS. Cross-service URLs cannot be wired automatically for the same
+      # reason, so paste the panel's URL here, e.g.
+      # https://creeb-support-panel.onrender.com
       - key: EXTRA_CORS_ORIGINS
-        fromService:
-          type: web
-          name: creeb-support-panel
-          property: host
+        sync: false
       - key: GROQ_MODEL
         value: openai/gpt-oss-120b
       - key: LOG_LEVEL
@@ -69,12 +67,12 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
     envVars:
-      # Baked into the HTML at build time; see vite.config.js.
+      # Baked into the HTML at build time; see vite.config.js. Must be the
+      # bot service's full URL, e.g. https://creeb-support-bot.onrender.com —
+      # `fromService` would give the bare service name, which the browser would
+      # then resolve as a relative path.
       - key: VITE_API_BASE
-        fromService:
-          type: web
-          name: creeb-support-bot
-          property: host
+        sync: false
     headers:
       - path: /*
         name: X-Frame-Options
