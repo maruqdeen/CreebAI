@@ -192,13 +192,16 @@ if (loginForm) {
         const next = new URLSearchParams(location.search).get('next')
         location.replace(next && next.startsWith('/') ? next : '/index.html')
       } catch (error) {
-        if (error instanceof ApiError && error.offline) {
-          showError(
-            'Cannot reach the support service. Check it is running, then try again.'
-          )
-        } else {
-          showError(error.message)
-        }
+        // Only a genuine network failure gets the generic wording; anything
+        // that came back with a reason keeps its own, which is always more
+        // useful than "check it is running".
+        const generic =
+          error instanceof ApiError && error.offline && !error.message.includes('VITE_API_BASE')
+        showError(
+          generic
+            ? 'Cannot reach the support service. Check it is running, then try again.'
+            : error.message
+        )
         $('#password', loginForm).value = ''
         $('#password', loginForm).focus()
       }

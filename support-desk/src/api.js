@@ -90,7 +90,10 @@ export function toLogin() {
 
 async function request(method, path, body, { anonymous = false } = {}) {
   if (API_BASE_LOOKS_WRONG) {
-    throw new ApiError(MISCONFIGURED, { offline: true })
+    // Not flagged offline: this is a configuration fault, not an unreachable
+    // service, and callers show a generic "cannot reach" message for offline
+    // errors — which would bury the one sentence that explains the problem.
+    throw new ApiError(MISCONFIGURED)
   }
 
   const headers = {}
