@@ -66,6 +66,11 @@ class Settings(BaseSettings):
     #: unsigned POST to the webhook URL is rejected.
     telegram_webhook_secret: str = ""
 
+    #: Telegram allows one delivery method per bot. Starting a local poller
+    #: therefore deletes any registered webhook, silently taking a deployed
+    #: instance offline. Polling refuses to do that unless this is set.
+    allow_webhook_takeover: bool = False
+
     @property
     def bind_host(self) -> str:
         """0.0.0.0 in production: 127.0.0.1 is unreachable inside a container."""

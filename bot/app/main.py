@@ -71,7 +71,28 @@ async def _serve(run_bot: bool, run_api: bool) -> None:
                     exc,
                 )
         else:
-            # Polling needs no public URL, which is what local development wants.
+            # Polling needs no public URL, which is what local development
+            # wants. But Telegram allows one delivery method per bot, so
+            # starting a poller means deleting whatever webhook is registered —
+            # and if that webhook is a deployed instance, this quietly takes
+            # production offline until it is redeployed. Refuse instead.
+            existing = (await application.bot.get_webhook_info()).url or ""
+            if existing and not settings.allow_webhook_takeover:
+                host = existing.split("/telegram/webhook/")[0] or existing
+                raise SystemExit(
+                    f"\nA webhook is already registered for this bot:\n"
+                    f"    {host}\n\n"
+                    f"Polling would delete it and leave that deployment "
+                    f"receiving nothing until it is redeployed.\n\n"
+                    f"Either use a separate bot token for local work, or set "
+                    f"ALLOW_WEBHOOK_TAKEOVER=1 to take it over deliberately.\n"
+                )
+            if existing:
+                log.warning(
+                    "Taking over the webhook registered at %s — that deployment "
+                    "will receive nothing until it is redeployed.",
+                    existing.split("/telegram/webhook/")[0] or existing,
+                )
             await application.bot.delete_webhook(drop_pending_updates=True)
             await application.updater.start_polling(
                 # Answering an hour late is worse than not answering.
