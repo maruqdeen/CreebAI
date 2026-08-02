@@ -1,0 +1,120 @@
+# Guided flows: questions the bot asks BEFORE answering.
+#
+# Some complaints are too vague to answer well. "My VPN is not working" has a
+# dozen causes, and a generic reply helps nobody. A flow makes the bot collect
+# what it needs first, one question at a time, then either resolve the problem
+# or hand over with everything already gathered.
+#
+# A flow runs per person: two people in the group can be in one at the same
+# time without interfering. While someone is in a flow, their next message goes
+# to the flow whatever it says, so an answer like "Nigeria MTN 50mb" is
+# understood even though it contains no target keyword.
+#
+# Flows are checked BEFORE the keyword gate and before the model, so they cost
+# nothing and always run exactly as written here.
+
+# Abandon a flow after this long with no reply, so a half-finished
+# conversation never traps someone.
+timeout_minutes: 30
+
+# Stock replies. Edit the wording here.
+replies:
+  # Sent when someone thanks the bot. A bare "ok" gets silence instead — the
+  # person is satisfied, and a reply to every "ok" is noise in a busy group.
+  thanks: |
+    You're welcome. If you have any other question or run into any issue using
+    Creeb, I'll be glad to help — or you can reach an admin directly at
+    @creebadmin.
+
+flows:
+  - id: connection-troubleshooting
+    name: VPN not connecting
+
+    # The message must contain one phrase from `any` AND one from `require`.
+    # `require` is what stops "my phone is not working" starting a VPN flow.
+    triggers:
+      any:
+        - not connecting
+        - not connect
+        - isnt connecting
+        - is not working
+        - not working
+        - stop connecting
+        - stopped connecting
+        - stop working
+        - stopped working
+        - cant connect
+        - can not connect
+        - cannot connect
+        - wont connect
+        - will not connect
+        - no connection
+        - failed to connect
+        - keeps disconnecting
+        - disconnecting
+        # Pidgin. This is how much of the community actually reports a fault,
+        # and none of the English phrasings above catch it.
+        - no dey work
+        - no dey connect
+        - no dey browse
+        - no dey load
+        - no work again
+        - don stop
+        - don spoil
+        - don die
+        - e no work
+        - e no dey
+        - no gree connect
+        - no gree work
+      require:
+        - vpn
+        - creeb
+        - creebvpn
+
+    first_step: region
+
+    steps:
+      - id: region
+        ask: What's your country/region, and what did you connect to?
+        next: updated
+
+      - id: updated
+        ask: Are you updated to the latest app and config version?
+        branches:
+          - when: "yes"
+            next: screenshot
+          - when: "no"
+            next: do-update
+        # An unclear answer is treated as "not sure yet" — ask for the log
+        # rather than sending someone to update something already updated.
+        fallback: screenshot
+
+      - id: do-update
+        say: |
+          Update the app from the Play Store, then update your config to the
+          latest version by tapping "update config" in the menu.
+
+          Make sure you have an active data connection while the config loads.
+          Try connecting again after that, and tell me if it still fails.
+        end: resolved
+
+      - id: screenshot
+        ask: |
+          Please send a screenshot or screen recording of your log while
+          connecting, and describe what you're seeing.
+        expects: photo
+        # Check the knowledge base against their description before handing
+        # over. The log reasons are documented, so many of these can be
+        # answered here rather than sent to an admin.
+        consult_kb: true
+        # Used only when the knowledge base does not cover what they described.
+        next: handover
+
+      - id: handover
+        say: |
+          This is beyond what I can answer — I've logged it for an admin with
+          everything you've told me.
+
+          For a faster reply, message @creebadmin directly with the screenshot
+          you provided, for follow-up.
+        end: escalate

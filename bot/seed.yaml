@@ -1,0 +1,120 @@
+# Starting content for the database. `python -m app.seed` loads this.
+#
+# EVERYTHING BELOW IS A PLACEHOLDER describing a generic payouts app. Rewrite it
+# for your product before the bot joins a real group — the model treats the
+# knowledge base as fact, so wrong text here becomes wrong answers to your users.
+#
+# Re-running the seed will not overwrite a knowledge base you have edited unless
+# you pass --force.
+
+telegram:
+  bot_link: ""
+  reply_threshold: 0.62
+
+  # TURNED OFF at the operator's request. Empty means no restriction: every
+  # message is considered, exactly as before this setting existed.
+  #
+  # What it does when filled in: a group message mentioning none of these terms
+  # is treated as other people talking to each other — not answered, not
+  # captured, not reported. Different from `keywords` below; those say "this is
+  # a subject we can answer about", these say "this is about our product".
+  #
+  # The trade-off, and probably why it was undone: it also drops legitimate
+  # questions that never name the product ("is there a free trial?").
+  #
+  # To switch it back on, uncomment the list and re-run `python -m app.seed`.
+  product_terms: []
+  #   - creeb
+  #   - creebvpn
+  #   - creeb vpn
+  #   - vpn
+  #   - injector
+  #   - creeb injector
+  #   - tunnel
+  #   - creeb tunnel
+
+  # Written as instructions to the bot, not as a FAQ. The model reads this
+  # before every reply and is told to answer only from what is in here.
+  kb_text: |
+    You answer questions in the public support group for YourApp.
+
+    ACCOUNT
+    - Signing up is free. Verification is required before the first withdrawal.
+    - Verification usually completes within 48 hours. If someone says it has
+      been longer than that, do not guess a cause — tell them an admin will
+      check it and ask them to DM the admin.
+    - One account can be signed in on two devices at once. Neither signs the
+      other out, and data syncs across both within a few seconds.
+    - Verification is completed once per account, not once per device.
+
+    PAYOUTS
+    - Payouts are processed every Tuesday and Friday.
+    - A processed payout lands in the destination account within 24 hours.
+    - A payout still showing "pending" after a processing day has usually not
+      cleared the bank's own batch yet. If it has been more than 24 hours past
+      a Tuesday or Friday, tell them an admin will look at it.
+
+    REFERRALS
+    - A referral bonus credits once the person referred completes their first
+      full action in the app, not when they sign up. This catches many people out.
+
+    SESSIONS
+    - Some devices stopped keeping people signed in after the last update.
+      This is a known bug on our side, not something the user did wrong.
+      Turning off battery optimisation for the app works around it until the
+      fix ships.
+
+    NEVER SAY
+    - Do not quote a fee, rate, processing time, or limit that is not written
+      above. If you do not have the number, say an admin will confirm it.
+    - Do not promise, approve, or estimate a refund.
+    - Never ask anyone for a password, PIN, full card number, or a verification
+      code, under any circumstance.
+    - Do not describe what identity data we store or why. Escalate instead.
+
+    TONE
+    - Short, plain, warm. Two or three sentences is usually right for a group.
+    - Answer the question that was asked. Do not add a sales pitch.
+    - If you are not sure, say so plainly and say an admin will follow up.
+
+  # A group message must contain one of these before the bot will consider
+  # answering it. Anything else that reads like a question is still captured
+  # silently for keyword discovery — it just gets no reply.
+  keywords:
+    - payout
+    - withdraw
+    - withdrawal
+    - verification
+    - verify
+    - refund
+    - login
+    - log in
+    - sign in
+    - referral
+    - bonus
+    - account
+    - transfer
+    - pending
+
+  # Hard limits, checked after the model and overriding it. A rule with
+  # `triggers` is enforced in code; a rule without them is advisory and only
+  # shapes the prompt.
+  rules:
+    - ref: R-01
+      text: Hold every complaint for a human reply.
+      triggers: "unacceptable, terrible, awful, scam, fraud, useless, angry, disgusted, worst, sue, lawyer, report you"
+    - ref: R-02
+      text: Never state a fee, rate, or processing time that is not in the knowledge base.
+      triggers: ""
+    - ref: R-03
+      text: Escalate anything mentioning identity documents, BVN, or a password.
+      triggers: "bvn, nin, passport, driver's licence, drivers license, id card, password, pin, otp, verification code, ssn"
+    - ref: R-04
+      text: Hold every refund or chargeback request for a human reply.
+      triggers: "refund, chargeback, money back, reverse the payment, dispute"
+
+email:
+  reply_threshold: 0.62
+  kb_text: ""
+  keywords: []
+  rules: []

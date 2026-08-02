@@ -1,0 +1,37 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // F5 with this selected runs the bot with breakpoints working. Set one in
+      // app/pipeline.py to watch a real message go through the gate.
+      "name": "Bot + API (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.main",
+      "cwd": "${workspaceFolder}/bot",
+      "python": "${workspaceFolder}/bot/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": true
+    },
+    {
+      "name": "API only (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.main",
+      "args": ["--api-only"],
+      "cwd": "${workspaceFolder}/bot",
+      "python": "${workspaceFolder}/bot/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Simulate a message (debug)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "app.simulate",
+      "args": ["my creeb vpn is not connecting"],
+      "cwd": "${workspaceFolder}/bot",
+      "python": "${workspaceFolder}/bot/.venv/bin/python",
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- @include('partials.head', {"title":"Settings","description":"Connect the bot, write the knowledge base, set target keywords and response rules."}) -->
+  </head>
+  <body class="min-h-dvh" data-page="settings">
+    <div class="lg:flex">
+      <!-- @include('partials.sidebar', {"nav":"settings"}) -->
+
+      <main class="flex-1 min-w-0 pb-16">
+        <!-- Page head -->
+        <header class="px-4 lg:px-6 pt-5 lg:pt-7 pb-4">
+          <div class="max-w-[68rem]">
+            <div class="flex items-center gap-2.5 mb-2">
+              <span class="micro">Form 04</span>
+              <span class="w-6 h-px bg-rule-strong" aria-hidden="true"></span>
+              <span class="micro !text-ink-2" data-today>—</span>
+            </div>
+            <h1 class="text-xl font-bold tracking-tight">Settings</h1>
+            <p class="text-xs text-ink-2 mt-1.5 max-w-[58ch]">
+              What the bot knows and how it is allowed to answer. Each channel keeps
+              its own knowledge base, so the group bot and the inbox can speak
+              differently.
+            </p>
+          </div>
+        </header>
+
+        <!-- Channel tabs -->
+        <div class="px-4 lg:px-6">
+          <div class="max-w-[68rem] flex items-end gap-1" role="tablist" aria-label="Channel" data-channel-tabs>
+            <button
+              type="button"
+              role="tab"
+              id="tab-telegram"
+              aria-controls="panel-telegram"
+              aria-selected="true"
+              data-channel-tab="telegram"
+              class="group flex items-center gap-2 px-4 py-2 text-lg font-bold tracking-tight rounded-t-sheet border border-b-0 border-transparent text-ink-3 aria-selected:text-ink aria-selected:bg-band aria-selected:border-rule transition-colors hover:text-ink"
+            >
+              <span class="w-2.5 h-2.5 rounded-[1px] bg-edge group-aria-selected:bg-indigo transition-colors" aria-hidden="true"></span>
+              Telegram
+            </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-email"
+              aria-controls="panel-email"
+              aria-selected="false"
+              data-channel-tab="email"
+              class="group flex items-center gap-2 px-4 py-2 text-lg font-bold tracking-tight rounded-t-sheet border border-b-0 border-transparent text-ink-3 aria-selected:text-ink aria-selected:bg-band aria-selected:border-rule transition-colors hover:text-ink"
+            >
+              <span class="w-2.5 h-2.5 rounded-[1px] bg-edge group-aria-selected:bg-stamp transition-colors" aria-hidden="true"></span>
+              Email
+            </button>
+          </div>
+        </div>
+        <div class="rule-double mx-4 lg:mx-6 max-w-[68rem]"></div>
+
+        <!-- @include('partials.offline') -->
+
+        <!-- ───────────────────────── Telegram panel ───────────────────────── -->
+        <form
+          id="panel-telegram"
+          role="tabpanel"
+          aria-labelledby="tab-telegram"
+          data-channel-panel="telegram"
+          class="px-4 lg:px-6 pt-7"
+          novalidate
+        >
+          <div class="max-w-[68rem] space-y-8">
+            <!-- Connection -->
+            <section aria-labelledby="tg-conn">
+              <div class="flex items-center justify-between gap-4 pb-2">
+                <h2 id="tg-conn" class="micro !text-ink">Bot connection</h2>
+                <span class="stamp stamp-neutral" data-connection-status="telegram">Checking…</span>
+              </div>
+              <div class="bg-leaf border border-edge rounded-sheet divide-y divide-hair">
+                <!-- Credentials are deliberately not editable here. This panel
+                     talks to the service over HTTP; putting a bot token in a
+                     form would mean transmitting and storing a secret that
+                     already has a safer home. -->
+                <div class="grid sm:grid-cols-[13rem_1fr] gap-x-5 gap-y-1.5 p-3.5">
+                  <span class="text-xs font-semibold pt-1.5">Credentials</span>
+                  <div class="text-2xs text-ink-2 leading-relaxed">
+                    <p>
+                      The BotFather token and your Groq key live in
+                      <code class="font-mono text-ink">bot/.env</code>, not here — a
+                      secret typed into this page would have to travel over the
+                      network and be stored to be of any use.
+                    </p>
+                    <p class="mt-1.5">
+                      Model in use: <code class="font-mono text-ink" data-model-name>—</code>
+                    </p>
+                  </div>
+                </div>
+
+                <div class="grid sm:grid-cols-[13rem_1fr] gap-x-5 gap-y-1.5 p-3.5">
+                  <label for="tg-link" class="text-xs font-semibold pt-1.5">
+                    Bot link
+                    <span class="block text-2xs font-normal text-ink-3 mt-0.5">
+                      Shown on the Telegram log page.
+                    </span>
+                  </label>
+                  <input
+                    id="tg-link"
+                    type="text"
+                    class="field field-mono"
+                    placeholder="t.me/your_support_bot"
+                    data-field-bot-link
+                  />
+                </div>
+              </div>
+            </section>
+
+            <!-- Knowledge base -->
+            <section aria-labelledby="tg-kb">
+              <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pb-2">
+                <div>
+                  <h2 id="tg-kb" class="micro !text-ink">Knowledge base</h2>
+                  <p class="text-2xs text-ink-2 mt-1 max-w-[62ch]">
+                    Everything the bot is allowed to say, in your own words. Plain
+                    prose — the model reads this before every reply. Don't convert it
+                    to JSON; that makes it harder to read, not easier.
+                  </p>
+                </div>
+                <span class="micro font-mono" data-count-for="tg-kb-text">0 characters</span>
+              </div>
+
+              <textarea
+                id="tg-kb-text"
+                class="field field-ruled w-full"
+                rows="14"
+                data-counted
+                placeholder="You answer questions in the support group for —.
+
+Write what the bot may say, as instructions rather than a FAQ.
+State what it must never say: prices you haven't confirmed, refunds, anything
+about identity documents.
+Tell it to say an admin will follow up when it isn't sure."
+              ></textarea>
+            </section>
+
+            <!-- Target keywords -->
+            <section aria-labelledby="tg-kw">
+              <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pb-2">
+                <div>
+                  <h2 id="tg-kw" class="micro !text-ink">Target keywords</h2>
+                  <p class="text-2xs text-ink-2 mt-1 max-w-[62ch]">
+                    A message must contain one of these before the bot consults the
+                    knowledge base at all. Anything else that reads like a question is
+                    still captured for you — it just gets no reply.
+                  </p>
+                </div>
+                <button type="button" class="btn shrink-0" data-suggest-keywords>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                  Derive from knowledge base
+                </button>
+              </div>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5">
+                <div class="flex flex-wrap gap-1.5 mb-2.5" data-token-list></div>
+                <input
+                  type="text"
+                  class="field field-mono"
+                  placeholder="type a keyword and press comma or enter"
+                  data-token-input
+                  aria-label="Add target keywords, separate with commas"
+                />
+              </div>
+            </section>
+
+            <!-- Rules -->
+            <section aria-labelledby="tg-rules">
+              <div class="pb-2">
+                <h2 id="tg-rules" class="micro !text-ink">Rules</h2>
+                <p class="text-2xs text-ink-2 mt-1 max-w-[62ch]">
+                  Checked after the model and overriding it. A rule with trigger words
+                  holds any message containing them for you; a rule without them only
+                  shapes the prompt.
+                </p>
+              </div>
+
+              <ol class="border border-edge rounded-sheet bg-leaf divide-y divide-hair" data-rules></ol>
+
+              <button type="button" class="btn mt-2.5" data-rule-add>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                Add rule
+              </button>
+            </section>
+
+            <!-- Reply threshold -->
+            <section aria-labelledby="tg-thresh">
+              <h2 id="tg-thresh" class="micro !text-ink pb-2">Reply threshold</h2>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <p class="text-2xs text-ink-2 flex-1 min-w-[18rem] max-w-[48ch]">
+                  Below this confidence the bot stays quiet and sends the question to
+                  your queue. Lower means more answers and more mistakes.
+                </p>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0.3"
+                    max="0.95"
+                    step="0.01"
+                    value="0.62"
+                    class="accent-indigo w-40"
+                    data-threshold
+                    aria-label="Reply confidence threshold"
+                  />
+                  <output class="font-mono text-sm font-bold w-10" data-threshold-out>0.62</output>
+                </div>
+              </div>
+            </section>
+
+            <!-- Digest -->
+            <section aria-labelledby="tg-digest">
+              <h2 id="tg-digest" class="micro !text-ink pb-2">Frequently-asked digest</h2>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5 grid sm:grid-cols-[13rem_1fr] gap-x-5 gap-y-3">
+                <label for="tg-digest-to" class="text-xs font-semibold pt-1.5">Send to</label>
+                <input
+                  id="tg-digest-to"
+                  type="email"
+                  class="field field-mono"
+                  placeholder="you@yourdomain.com"
+                  data-field-digest-to
+                />
+
+                <span class="text-xs font-semibold pt-1.5">Schedule</span>
+                <div>
+                  <div class="flex flex-wrap items-center gap-4">
+                    <label class="flex items-center gap-2 text-xs">
+                      <input type="checkbox" class="accent-indigo w-3.5 h-3.5" data-field-digest-weekly />
+                      Weekly, Monday 09:00
+                    </label>
+                    <label class="flex items-center gap-2 text-xs">
+                      <input type="checkbox" class="accent-indigo w-3.5 h-3.5" data-field-digest-monthly />
+                      Monthly, 1st 09:00
+                    </label>
+                  </div>
+                  <p class="text-2xs text-ink-3 mt-2">
+                    Saved, but not yet acted on — the scheduler that sends these is not
+                    built. The dashboard's list is live in the meantime.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="max-w-[68rem] mt-8 pt-4 border-t border-rule flex flex-wrap items-center justify-between gap-3">
+            <p class="text-2xs text-ink-3">Changes apply to the next message the bot receives.</p>
+            <div class="flex items-center gap-2">
+              <button type="reset" class="btn">Discard</button>
+              <button type="submit" class="btn btn-primary btn-lg" data-save>Save</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- ────────────────────────── Email panel ─────────────────────────── -->
+        <form
+          id="panel-email"
+          role="tabpanel"
+          aria-labelledby="tab-email"
+          data-channel-panel="email"
+          class="px-4 lg:px-6 pt-7 hidden"
+          novalidate
+        >
+          <div class="max-w-[68rem] space-y-8">
+            <section aria-labelledby="em-conn">
+              <div class="flex items-center justify-between gap-4 pb-2">
+                <h2 id="em-conn" class="micro !text-ink">Email connection</h2>
+                <span class="stamp stamp-neutral" data-connection-status="email">Not connected</span>
+              </div>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5">
+                <p class="text-2xs text-ink-2 leading-relaxed max-w-[62ch]">
+                  No inbound email relay is running yet, so nothing reaches this
+                  channel. What you write below is stored and will be used the moment
+                  the relay is built — the knowledge base, keywords and rules are
+                  already read per-channel.
+                </p>
+              </div>
+            </section>
+
+            <section aria-labelledby="em-kb">
+              <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pb-2">
+                <div>
+                  <h2 id="em-kb" class="micro !text-ink">Knowledge base</h2>
+                  <p class="text-2xs text-ink-2 mt-1 max-w-[62ch]">
+                    Email answers can be longer and more formal than group replies.
+                    Plain prose, written as instructions.
+                  </p>
+                </div>
+                <span class="micro font-mono" data-count-for="em-kb-text">0 characters</span>
+              </div>
+
+              <textarea
+                id="em-kb-text"
+                class="field field-ruled w-full"
+                rows="14"
+                data-counted
+                placeholder="You answer support email for —. Sign off as the support team."
+              ></textarea>
+            </section>
+
+            <section aria-labelledby="em-kw">
+              <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-2 pb-2">
+                <h2 id="em-kw" class="micro !text-ink">Target keywords</h2>
+                <button type="button" class="btn shrink-0" data-suggest-keywords>
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+                  </svg>
+                  Derive from knowledge base
+                </button>
+              </div>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5">
+                <div class="flex flex-wrap gap-1.5 mb-2.5" data-token-list></div>
+                <input
+                  type="text"
+                  class="field field-mono"
+                  placeholder="type a keyword and press comma or enter"
+                  data-token-input
+                  aria-label="Add target keywords, separate with commas"
+                />
+              </div>
+            </section>
+
+            <section aria-labelledby="em-rules">
+              <div class="pb-2">
+                <h2 id="em-rules" class="micro !text-ink">Rules</h2>
+                <p class="text-2xs text-ink-2 mt-1 max-w-[62ch]">
+                  Checked after the model and overriding it.
+                </p>
+              </div>
+              <ol class="border border-edge rounded-sheet bg-leaf divide-y divide-hair" data-rules></ol>
+              <button type="button" class="btn mt-2.5" data-rule-add>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                </svg>
+                Add rule
+              </button>
+            </section>
+
+            <section aria-labelledby="em-thresh">
+              <h2 id="em-thresh" class="micro !text-ink pb-2">Reply threshold</h2>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5 flex flex-wrap items-center gap-x-6 gap-y-3">
+                <p class="text-2xs text-ink-2 flex-1 min-w-[18rem] max-w-[48ch]">
+                  Below this confidence the bot stays quiet and queues the question.
+                </p>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="range"
+                    min="0.3"
+                    max="0.95"
+                    step="0.01"
+                    value="0.62"
+                    class="accent-indigo w-40"
+                    data-threshold
+                    aria-label="Reply confidence threshold"
+                  />
+                  <output class="font-mono text-sm font-bold w-10" data-threshold-out>0.62</output>
+                </div>
+              </div>
+            </section>
+
+            <section aria-labelledby="em-digest">
+              <h2 id="em-digest" class="micro !text-ink pb-2">Frequently-asked digest</h2>
+              <div class="bg-leaf border border-edge rounded-sheet p-3.5 grid sm:grid-cols-[13rem_1fr] gap-x-5 gap-y-3">
+                <label for="em-digest-to" class="text-xs font-semibold pt-1.5">Send to</label>
+                <input id="em-digest-to" type="email" class="field field-mono" placeholder="you@yourdomain.com" data-field-digest-to />
+                <span class="text-xs font-semibold pt-1.5">Schedule</span>
+                <div class="flex flex-wrap items-center gap-4">
+                  <label class="flex items-center gap-2 text-xs">
+                    <input type="checkbox" class="accent-indigo w-3.5 h-3.5" data-field-digest-weekly />
+                    Weekly
+                  </label>
+                  <label class="flex items-center gap-2 text-xs">
+                    <input type="checkbox" class="accent-indigo w-3.5 h-3.5" data-field-digest-monthly />
+                    Monthly
+                  </label>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div class="max-w-[68rem] mt-8 pt-4 border-t border-rule flex flex-wrap items-center justify-between gap-3">
+            <p class="text-2xs text-ink-3">Stored now, used when the email relay is built.</p>
+            <div class="flex items-center gap-2">
+              <button type="reset" class="btn">Discard</button>
+              <button type="submit" class="btn btn-primary btn-lg" data-save>Save</button>
+            </div>
+          </div>
+        </form>
+      </main>
+    </div>
+
+    <!-- @include('partials.composer') -->
+  </body>
+</html>

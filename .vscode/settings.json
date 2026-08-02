@@ -1,0 +1,28 @@
+{
+  // Point VS Code at the bot's virtualenv. Without this, the editor uses the
+  // system Python, every import shows as unresolved, and the test runner finds
+  // nothing — the single most common reason this project "doesn't work" in the
+  // editor while running fine in a terminal.
+  "python.defaultInterpreterPath": "${workspaceFolder}/bot/.venv/bin/python",
+
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["bot/tests"],
+
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.venv": true,
+    "**/support-desk.zip": true
+  },
+
+  // support.db holds the knowledge base, the queue and live conversations.
+  // Marked read-only so it is never edited by hand in the editor by accident.
+  "files.readonlyInclude": {
+    "bot/support.db": true
+  }
+}

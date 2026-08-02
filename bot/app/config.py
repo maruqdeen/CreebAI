@@ -1,0 +1,166 @@
+"""Settings, read from the environment / .env.
+
+Secrets live here and nowhere else. Nothing in this package logs a token or an
+API key, and none of them are ever written to the database.
+"""
+
+from pathlib import Path
+from typing import Any
+
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BOT_DIR = Path(__file__).resolve().parent.parent
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=BOT_DIR / ".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # Telegram
+    telegram_bot_token: str = ""
+    admin_telegram_user_id: int | None = None
+    telegram_group_chat_id: int | None = None
+
+    # Groq. Only the openai/gpt-oss-* models support strict json_schema, which
+    # the escalation verdict depends on — see groq_client.py.
+    groq_api_key: str = ""
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_timeout_seconds: float = 30.0
+
+    # App
+    database_url: str = f"sqlite:///{BOT_DIR / 'support.db'}"
+    panel_base_url: str = "http://localhost:5190"
+    api_host: str = "127.0.0.1"
+    api_port: int = 8000
+    #: Render (and most hosts) inject the port to bind as PORT. When present it
+    #: wins, because a service that ignores it never passes a health check.
+    port: int | None = None
+    log_level: str = "INFO"
+
+    # --- Deployment -------------------------------------------------------
+    #: The service's own public URL, e.g. https://creeb-bot.onrender.com.
+    #: Set in production; the Telegram webhook is registered against it.
+    public_url: str = ""
+    #: Extra browser origins allowed to call the API, comma separated.
+    extra_cors_origins: str = ""
+
+    # --- Admin login ------------------------------------------------------
+    admin_username: str = ""
+    #: From `python -m app.adminpw`. Never the password itself.
+    admin_password_hash: str = ""
+    #: Signs session tokens. Changing it logs everyone out, which is the
+    #: intended way to revoke a session.
+    secret_key: str = ""
+
+    #: Sent to Telegram with setWebhook and returned on every delivery, so an
+    #: unsigned POST to the webhook URL is rejected.
+    telegram_webhook_secret: str = ""
+
+    @property
+    def bind_host(self) -> str:
+        """0.0.0.0 in production: 127.0.0.1 is unreachable inside a container."""
+        return "0.0.0.0" if self.port else self.api_host
+
+    @property
+    def bind_port(self) -> int:
+        return self.port or self.api_port
+
+    @property
+    def use_webhook(self) -> bool:
+        """Webhook when a public URL is known, polling otherwise.
+
+        This is what keeps local development on polling with no extra flags
+        while production runs the mode free hosting requires.
+        """
+        return bool(self.public_url)
+
+    @property
+    def webhook_path(self) -> str:
+        secret = self.telegram_webhook_secret or "unset"
+        return f"/telegram/webhook/{secret}"
+
+    def cors_origins(self) -> list[str]:
+        origins = [
+            self.panel_base_url,
+            "http://localhost:5190",
+            "http://127.0.0.1:5190",
+        ]
+        origins += [o.strip() for o in self.extra_cors_origins.split(",") if o.strip()]
+        # Preserve order, drop blanks and duplicates.
+        return list(dict.fromkeys(o for o in origins if o))
+
+    @field_validator(
+        "admin_telegram_user_id", "telegram_group_chat_id", mode="before"
+    )
+    @classmethod
+    def _blank_is_unset(cls, value: Any) -> Any:
+        """`FOO=` in .env means "not filled in yet", not "invalid integer".
+
+        Without this the app dies on a pydantic traceback the moment someone
+        copies .env.example and has not reached that line yet — which is the
+        normal state on a first run.
+        """
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
+    @field_validator("telegram_bot_token", "groq_api_key", mode="before")
+    @classmethod
+    def _strip_secret(cls, value: Any) -> Any:
+        """Tolerate quotes and stray whitespace around a pasted credential."""
+        if isinstance(value, str):
+            return value.strip().strip("\"'").strip()
+        return value
+
+    @property
+    def telegram_configured(self) -> bool:
+        return bool(self.telegram_bot_token)
+
+    @property
+    def groq_configured(self) -> bool:
+        return bool(self.groq_api_key)
+
+    def missing(self) -> list[str]:
+        """Settings that must be filled in before a live run.
+
+        ADMIN_TELEGRAM_USER_ID is deliberately not required: when it is blank,
+        the first person to /start the bot in a DM claims the admin seat, which
+        saves looking up a numeric id you should not have to know.
+        """
+        gaps = []
+        if not self.telegram_bot_token:
+            gaps.append("TELEGRAM_BOT_TOKEN")
+        if not self.groq_api_key:
+            gaps.append("GROQ_API_KEY")
+        return gaps
+
+    def deployment_gaps(self) -> list[str]:
+        """What is missing before this is safe to expose publicly.
+
+        Reported at startup rather than enforced, so a half-configured deploy
+        says what is wrong instead of failing with a stack trace.
+        """
+        gaps = []
+        if not self.secret_key:
+            gaps.append("SECRET_KEY (sessions cannot be signed)")
+        if not self.admin_username or not self.admin_password_hash:
+            gaps.append("ADMIN_USERNAME / ADMIN_PASSWORD_HASH (no one can log in)")
+        if self.public_url and not self.telegram_webhook_secret:
+            gaps.append("TELEGRAM_WEBHOOK_SECRET (the webhook would be unverified)")
+        return gaps
+
+
+settings = Settings()
+
+if not settings.secret_key:
+    # Local development should not need ceremony, but an unsigned token is not
+    # a token. A random per-process key means sessions simply do not survive a
+    # restart — obvious in development, and flagged loudly at startup in
+    # production by `deployment_gaps()`.
+    import secrets as _secrets
+
+    settings.secret_key = _secrets.token_urlsafe(32)

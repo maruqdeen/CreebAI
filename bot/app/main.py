@@ -1,0 +1,130 @@
+"""Run the bot and the API in one process.
+
+    python -m app.main               # both
+    python -m app.main --api-only    # panel API only, no bot token needed
+    python -m app.main --bot-only    # bot only
+
+One process means a reply sent from the panel goes out over the same Telegram
+connection the bot is already holding, and both halves share one SQLite file.
+"""
+
+import argparse
+import asyncio
+import logging
+
+import uvicorn
+
+from app.api import app as api_app
+from app.config import settings
+from app.db import init_db
+
+log = logging.getLogger(__name__)
+
+
+def _configure_logging() -> None:
+    logging.basicConfig(
+        level=getattr(logging, settings.log_level.upper(), logging.INFO),
+        format="%(asctime)s %(levelname)-7s %(name)s: %(message)s",
+    )
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+
+
+async def _serve(run_bot: bool, run_api: bool) -> None:
+    application = None
+    webhook_mode = run_bot and settings.use_webhook
+
+    if run_bot:
+        from app.telegram_bot import build_application
+        from app.webhook import attach
+
+        application = build_application()
+        await application.initialize()
+        await application.start()
+        me = await application.bot.get_me()
+
+        if webhook_mode:
+            # Deliveries arrive on the API's own port, so nothing extra listens.
+            url = settings.public_url.rstrip("/") + settings.webhook_path
+            await application.bot.set_webhook(
+                url=url,
+                secret_token=settings.telegram_webhook_secret or None,
+                allowed_updates=["message"],
+                drop_pending_updates=True,
+            )
+            attach(application)
+            log.info(
+                "Bot @%s on model %s — webhook registered at %s",
+                me.username,
+                settings.groq_model,
+                settings.public_url.rstrip("/") + "/telegram/webhook/***",
+            )
+        else:
+            # Polling needs no public URL, which is what local development wants.
+            await application.bot.delete_webhook(drop_pending_updates=True)
+            await application.updater.start_polling(
+                # Answering an hour late is worse than not answering.
+                drop_pending_updates=True,
+                allowed_updates=["message"],
+            )
+            log.info("Bot @%s is polling on model %s", me.username, settings.groq_model)
+
+    try:
+        if run_api:
+            server = uvicorn.Server(
+                uvicorn.Config(
+                    api_app,
+                    host=settings.bind_host,
+                    port=settings.bind_port,
+                    log_level=settings.log_level.lower(),
+                    forwarded_allow_ips="*",  # behind the host's proxy
+                )
+            )
+            await server.serve()
+        else:
+            # Bot only: idle until interrupted.
+            await asyncio.Event().wait()
+    finally:
+        if application is not None:
+            log.info("Stopping the bot…")
+            if application.updater is not None and application.updater.running:
+                await application.updater.stop()
+            await application.stop()
+            await application.shutdown()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--api-only", action="store_true", help="serve the panel API only")
+    group.add_argument("--bot-only", action="store_true", help="run the Telegram bot only")
+    args = parser.parse_args()
+
+    _configure_logging()
+    init_db()
+
+    run_bot = not args.api_only
+    run_api = not args.bot_only
+
+    if run_bot:
+        gaps = settings.missing()
+        if gaps:
+            raise SystemExit(
+                "Cannot start the bot — not set in bot/.env: "
+                + ", ".join(gaps)
+                + "\nRun with --api-only to start just the panel API."
+            )
+        if settings.use_webhook and not settings.telegram_webhook_secret:
+            raise SystemExit(
+                "PUBLIC_URL is set but TELEGRAM_WEBHOOK_SECRET is not, so the "
+                "webhook would accept unsigned requests. Generate one with "
+                "`python -m app.adminpw`."
+            )
+
+    try:
+        asyncio.run(_serve(run_bot=run_bot, run_api=run_api))
+    except KeyboardInterrupt:
+        log.info("Stopped.")
+
+
+if __name__ == "__main__":
+    main()

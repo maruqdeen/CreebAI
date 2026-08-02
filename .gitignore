@@ -1,0 +1,38 @@
+# Secrets — never commit these. Credentials belong in the host's environment.
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local databases. Production data lives in Neon; support.db is your machine's
+# working copy and must not travel with the code.
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Node
+node_modules/
+dist/
+
+# Build artefacts and archives
+support-desk.zip
+
+# A separate, unrelated project that happens to live in the same parent folder
+# on the author's machine. Not part of this repository.
+/2amazinghands/
+/PRODUCT.md
+/DESIGN.md
+
+# Editors and OS
+.DS_Store
+*.swp
+
+# Machine-local tool settings: contains absolute paths from the author's
+# machine and is per-developer by design.
+.claude/settings.local.json

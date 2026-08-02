@@ -1,0 +1,237 @@
+<!doctype html>
+<!--
+  DIRECTION CONTRACT — Support Desk (Operate)
+
+  THESIS  A support desk keeps a log, not a dashboard. This surface is a ruled
+          duty ledger; it refuses the SaaS-admin default (white ground, Inter,
+          soft-shadow rounded cards, sparkline tiles, violet accent) and its
+          predictable opposite, the neon-on-black console.
+  OWN-WORLD  Greenbar paper ground, oxide-red column rules, iron-gall
+          blue-black ink, rubber-stamp vermilion for state, ledger green for
+          filed. Public Sans for the interface; Courier Prime only for what a
+          machine typed. Carbon-copy violet is reserved, absolutely, for text
+          the model wrote — the Groq draft is a carbon duplicate and converts
+          to black ink the moment the operator edits it.
+  STORY   The operator sees today's volume, reads what users keep asking,
+          works the queue the bot could not answer, and files each answer back
+          into the knowledge base so the queue shrinks.
+  FIRST VIEWPORT  Index tabs down the left fore-edge. Page head with form
+          number, date and a Week/Month toggle, closed by a double rule. Three
+          double-ruled summary boxes; the combined total leads at 3.25rem with
+          the channel split as a meter beneath it. Below, the two most-asked
+          columns side by side. Primary action is "Work the queue", top right.
+  FORM    Duty log — candidate 6 of the ordered grounded list, the assigned
+          index. No staging taken; the finite-tile inventory did not survive
+          contact with a support queue. Seed key 25350d32.
+-->
+<html lang="en">
+  <head>
+    <!-- @include('partials.head', {"title":"Dashboard","description":"Volume answered across Telegram and email, and what your users keep asking."}) -->
+  </head>
+  <body class="min-h-dvh" data-page="dashboard">
+    <div class="lg:flex">
+      <!-- @include('partials.sidebar', {"nav":"dashboard"}) -->
+
+      <main class="flex-1 min-w-0 pb-16">
+        <!-- Page head -->
+        <header class="px-4 lg:px-6 pt-5 lg:pt-7 pb-4">
+          <div class="max-w-[88rem] flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+            <div>
+              <div class="flex items-center gap-2.5 mb-2">
+                <span class="micro">Form 01</span>
+                <span class="w-6 h-px bg-rule-strong" aria-hidden="true"></span>
+                <span class="micro !text-ink-2" data-today>—</span>
+              </div>
+              <h1 class="text-xl font-bold tracking-tight">Dashboard</h1>
+              <p class="text-xs text-ink-2 mt-1.5 max-w-[52ch]">
+                What the bot handled, and what it keeps getting asked.
+                <a
+                  href="/telegram.html"
+                  class="text-stamp font-semibold underline underline-offset-2 decoration-stamp/40 hover:decoration-stamp"
+                  data-waiting-link
+                  >Loading the queue…</a
+                >
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="seg" role="tablist" aria-label="Reporting period" data-period>
+                <button role="tab" aria-selected="true" data-period-btn="week">Week</button>
+                <button role="tab" aria-selected="false" data-period-btn="month">Month</button>
+              </div>
+              <a href="/telegram.html" class="btn btn-primary">Work the queue</a>
+            </div>
+          </div>
+        </header>
+
+        <div class="rule-double mx-4 lg:mx-6 max-w-[88rem]"></div>
+
+        <!-- @include('partials.offline') -->
+
+        <!-- Summary boxes -->
+        <section class="px-4 lg:px-6 pt-6" aria-labelledby="totals-heading">
+          <h2 id="totals-heading" class="sr-only">Queries responded</h2>
+
+          <div class="max-w-[88rem] grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr]">
+            <!-- Combined -->
+            <div class="summary-box">
+              <div class="flex items-start justify-between gap-3">
+                <div class="micro">Total queries responded<br />Telegram + Email</div>
+                <span class="stamp stamp-answered" data-period-label>This week</span>
+              </div>
+
+              <div class="flex items-baseline gap-3 mt-1">
+                <span class="stat-figure !text-stat-lg" data-stat="total">—</span>
+                <span class="text-2xs text-ink-3" data-stat="total-note"></span>
+              </div>
+
+              <div class="mt-auto pt-3">
+                <div class="meter" role="img" data-meter-label aria-label="Channel split">
+                  <span class="bg-indigo" data-meter="telegram" style="width: 0%"></span>
+                  <span class="bg-stamp" data-meter="email" style="width: 0%"></span>
+                </div>
+                <div class="flex items-center gap-4 mt-2">
+                  <span class="text-2xs text-ink-2 flex items-center gap-1.5">
+                    <span class="w-2 h-2 bg-indigo rounded-[1px]" aria-hidden="true"></span>Telegram
+                  </span>
+                  <span class="text-2xs text-ink-2 flex items-center gap-1.5">
+                    <span class="w-2 h-2 bg-stamp rounded-[1px]" aria-hidden="true"></span>Email
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="summary-box">
+              <div class="micro">Total queries responded<br />Email</div>
+              <div class="flex items-baseline gap-2.5 mt-1">
+                <span class="stat-figure" data-stat="email-answered">—</span>
+                <span class="text-2xs text-ink-3">answered</span>
+              </div>
+              <dl class="mt-auto pt-3 border-t border-hair grid grid-cols-2 gap-x-3 gap-y-1">
+                <dt class="text-2xs text-ink-2">Waiting on you</dt>
+                <dd class="text-2xs font-mono text-stamp font-bold text-right" data-stat="email-unanswered">—</dd>
+                <dt class="text-2xs text-ink-2">Median reply</dt>
+                <dd class="text-2xs font-mono text-ink text-right" data-stat="email-median">—</dd>
+              </dl>
+            </div>
+
+            <!-- Telegram -->
+            <div class="summary-box">
+              <div class="micro">Total queries responded<br />Telegram</div>
+              <div class="flex items-baseline gap-2.5 mt-1">
+                <span class="stat-figure" data-stat="telegram-answered">—</span>
+                <span class="text-2xs text-ink-3">answered</span>
+              </div>
+              <dl class="mt-auto pt-3 border-t border-hair grid grid-cols-2 gap-x-3 gap-y-1">
+                <dt class="text-2xs text-ink-2">Waiting on you</dt>
+                <dd class="text-2xs font-mono text-stamp font-bold text-right" data-stat="telegram-unanswered">—</dd>
+                <dt class="text-2xs text-ink-2">Median reply</dt>
+                <dd class="text-2xs font-mono text-ink text-right" data-stat="telegram-median">—</dd>
+              </dl>
+            </div>
+          </div>
+        </section>
+
+        <!-- Most asked -->
+        <section class="px-4 lg:px-6 pt-9" aria-labelledby="asked-heading">
+          <div class="max-w-[88rem]">
+            <div class="flex items-end justify-between gap-4 pb-2.5">
+              <h2 id="asked-heading" class="text-lg font-bold tracking-tight">
+                Most asked
+                <span class="text-ink-3 font-normal" data-period-word>this week</span>
+              </h2>
+              <span class="micro hidden sm:block">Ranked by volume</span>
+            </div>
+            <div class="rule-double"></div>
+
+            <div class="grid gap-x-8 gap-y-8 lg:grid-cols-2 pt-5">
+              <div>
+                <div class="flex items-center gap-2 pb-2">
+                  <span class="w-2.5 h-2.5 bg-stamp rounded-[1px]" aria-hidden="true"></span>
+                  <h3 class="micro !text-ink">Most asked email question</h3>
+                </div>
+                <ol class="border-t border-rule" data-asked="email"></ol>
+                <a href="/email.html" class="btn btn-ghost mt-3">
+                  Open email log
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 6h8m0 0L6.5 2.5M10 6 6.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </a>
+              </div>
+
+              <div>
+                <div class="flex items-center gap-2 pb-2">
+                  <span class="w-2.5 h-2.5 bg-indigo rounded-[1px]" aria-hidden="true"></span>
+                  <h3 class="micro !text-ink">Most asked telegram question</h3>
+                </div>
+                <ol class="border-t border-rule" data-asked="telegram"></ol>
+                <a href="/telegram.html" class="btn btn-ghost mt-3">
+                  Open telegram log
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 6h8m0 0L6.5 2.5M10 6 6.5 9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <template id="tpl-asked">
+              <li class="log-row !grid-cols-[auto_1fr_auto]">
+                <span class="log-ref w-4 text-right" data-field="rank"></span>
+                <span class="text-sm truncate" data-field="question"></span>
+                <span class="flex items-center gap-3 shrink-0">
+                  <span class="font-mono text-2xs text-ink-2" data-field="count"></span>
+                  <span class="stamp" data-field="state"></span>
+                </span>
+              </li>
+            </template>
+
+            <template id="tpl-asked-empty">
+              <li class="px-4 py-6 text-xs text-ink-3">
+                Nothing asked on this channel yet.
+              </li>
+            </template>
+          </div>
+        </section>
+
+        <!-- Asked about, not covered -->
+        <section class="px-4 lg:px-6 pt-9" aria-labelledby="gaps-heading">
+          <div class="max-w-[88rem]">
+            <div class="flex items-end justify-between gap-4 pb-2.5">
+              <h2 id="gaps-heading" class="text-lg font-bold tracking-tight">
+                Asked about, not in the knowledge base
+              </h2>
+              <a href="/settings.html" class="btn btn-ghost">Open the knowledge base</a>
+            </div>
+            <div class="rule-double"></div>
+            <div class="pt-4 flex flex-wrap gap-1.5" data-gaps>
+              <span class="text-xs text-ink-3">Loading…</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Digest -->
+        <section class="px-4 lg:px-6 pt-9" aria-labelledby="digest-heading">
+          <div class="max-w-[88rem] bg-band border border-edge rounded-sheet p-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div class="flex items-start gap-3 flex-1 min-w-[18rem]">
+              <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true" class="mt-0.5 shrink-0 text-ink-2">
+                <rect x="1.5" y="2.5" width="13" height="12" stroke="currentColor" stroke-width="1.3" />
+                <path d="M1.5 6h13M5 1.5v2M11 1.5v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                <path d="M4.5 9h3M4.5 11.5h6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+              </svg>
+              <div>
+                <h2 id="digest-heading" class="text-xs font-bold">Frequently-asked digest</h2>
+                <p class="text-2xs text-ink-2 mt-0.5 leading-relaxed max-w-[56ch]" data-digest-note>
+                  Reading the schedule…
+                </p>
+              </div>
+            </div>
+            <a href="/settings.html" class="btn btn-ghost">Schedule</a>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- @include('partials.composer') -->
+  </body>
+</html>

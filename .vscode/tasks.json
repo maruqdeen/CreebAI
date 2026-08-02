@@ -1,0 +1,76 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      // The one to use day to day: starts the bot and the panel together.
+      "label": "Start everything",
+      "dependsOn": ["Bot + API", "Admin panel"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Bot + API",
+      "type": "shell",
+      "command": "${workspaceFolder}/bot/.venv/bin/python -m app.main",
+      "options": { "cwd": "${workspaceFolder}/bot" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "creeb",
+        "panel": "dedicated",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "Admin panel",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/support-desk" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "group": "creeb",
+        "panel": "dedicated",
+        "reveal": "always"
+      }
+    },
+    {
+      // Runs the panel API without a Telegram connection — useful when the bot
+      // is already running elsewhere, or when there is no token to hand.
+      "label": "API only (no bot)",
+      "type": "shell",
+      "command": "${workspaceFolder}/bot/.venv/bin/python -m app.main --api-only",
+      "options": { "cwd": "${workspaceFolder}/bot" },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    },
+    {
+      "label": "Tests",
+      "type": "shell",
+      "command": "${workspaceFolder}/bot/.venv/bin/python -m pytest tests -q",
+      "options": { "cwd": "${workspaceFolder}/bot" },
+      "problemMatcher": [],
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "panel": "dedicated" }
+    },
+    {
+      // Try a message through the whole pipeline without Telegram or a group.
+      "label": "Simulate a message",
+      "type": "shell",
+      "command": "${workspaceFolder}/bot/.venv/bin/python -m app.simulate \"${input:message}\"",
+      "options": { "cwd": "${workspaceFolder}/bot" },
+      "problemMatcher": [],
+      "presentation": { "panel": "dedicated" }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "message",
+      "type": "promptString",
+      "description": "Message to run through the pipeline",
+      "default": "how do i connect creebvpn on android"
+    }
+  ]
+}
