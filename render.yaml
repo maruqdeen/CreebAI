@@ -59,10 +59,12 @@ services:
         value: INFO
 
   # ── Admin panel ──────────────────────────────────────────────────────────
+  # No `plan` here: static sites have no instance type, they are always free,
+  # and setting one fails validation with "no such plan free for service type
+  # web".
   - type: web
     name: creeb-support-panel
     runtime: static
-    plan: free
     rootDir: support-desk
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
@@ -73,12 +75,6 @@ services:
           type: web
           name: creeb-support-bot
           property: host
-    routes:
-      # Anything unrecognised goes to the login page rather than a 404, so a
-      # bookmarked deep link still lands somewhere useful.
-      - type: rewrite
-        source: /
-        destination: /index.html
     headers:
       - path: /*
         name: X-Frame-Options
