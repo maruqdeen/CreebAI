@@ -12,6 +12,7 @@ deliberately no rollup tables to keep in sync.
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    BigInteger,
     Boolean,
     CheckConstraint,
     DateTime,
@@ -66,10 +67,10 @@ class ChannelSettings(Base):
 
     # Connection
     bot_link: Mapped[str | None] = mapped_column(String(255))
-    group_chat_id: Mapped[int | None] = mapped_column(Integer)
+    group_chat_id: Mapped[int | None] = mapped_column(BigInteger)
     # Learned when the admin /starts the bot in a DM. A bot cannot message a
     # user who has never messaged it, so this stays null until they do.
-    admin_chat_id: Mapped[int | None] = mapped_column(Integer)
+    admin_chat_id: Mapped[int | None] = mapped_column(BigInteger)
 
     # Behaviour
     kb_text: Mapped[str] = mapped_column(Text, default="")
@@ -168,9 +169,9 @@ class Query(Base):
     channel: Mapped[str] = mapped_column(String(16), index=True)
 
     # Telegram provenance, enough to reply in-thread later
-    tg_chat_id: Mapped[int | None] = mapped_column(Integer)
-    tg_message_id: Mapped[int | None] = mapped_column(Integer)
-    tg_user_id: Mapped[int | None] = mapped_column(Integer)
+    tg_chat_id: Mapped[int | None] = mapped_column(BigInteger)
+    tg_message_id: Mapped[int | None] = mapped_column(BigInteger)
+    tg_user_id: Mapped[int | None] = mapped_column(BigInteger)
     user_handle: Mapped[str | None] = mapped_column(String(128))
 
     body: Mapped[str] = mapped_column(Text)
@@ -220,8 +221,8 @@ class Conversation(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     channel: Mapped[str] = mapped_column(String(16), index=True)
-    chat_id: Mapped[int | None] = mapped_column(Integer)
-    user_id: Mapped[int | None] = mapped_column(Integer)
+    chat_id: Mapped[int | None] = mapped_column(BigInteger)
+    user_id: Mapped[int | None] = mapped_column(BigInteger)
 
     flow_id: Mapped[str] = mapped_column(String(64))
     step_id: Mapped[str | None] = mapped_column(String(64))

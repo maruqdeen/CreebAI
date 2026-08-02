@@ -98,10 +98,42 @@ def _add_missing_columns() -> None:
                     conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")
 
 
+#: Columns holding ids that come from Telegram. A supergroup chat id such as
+#: -1004369410993 is already far outside int32, and user ids are heading the
+#: same way. SQLite ignores declared types so this only ever fails on Postgres,
+#: at runtime, with "integer out of range".
+_BIGINT_COLUMNS = {
+    "channel_settings": ("group_chat_id", "admin_chat_id"),
+    "queries": ("tg_chat_id", "tg_message_id", "tg_user_id"),
+    "conversations": ("chat_id", "user_id"),
+}
+
+
+def _widen_id_columns() -> None:
+    """Bring an existing Postgres schema up to BIGINT for Telegram ids."""
+    if _is_sqlite:
+        return
+    with engine.begin() as conn:
+        for table, columns in _BIGINT_COLUMNS.items():
+            narrow = {
+                row[0]
+                for row in conn.exec_driver_sql(
+                    "SELECT column_name FROM information_schema.columns "
+                    f"WHERE table_name = '{table}' AND data_type = 'integer'"
+                )
+            }
+            for column in columns:
+                if column in narrow:
+                    conn.exec_driver_sql(
+                        f"ALTER TABLE {table} ALTER COLUMN {column} TYPE BIGINT"
+                    )
+
+
 def init_db() -> None:
     """Create any missing tables and columns. Safe to call on every start."""
     Base.metadata.create_all(engine)
     _add_missing_columns()
+    _widen_id_columns()
 
 
 @contextmanager
