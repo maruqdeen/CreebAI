@@ -42,7 +42,7 @@ from app.security import (
     authenticate,
     read_token,
 )
-from app.webhook import telegram_router
+from app.webhook import is_registered, telegram_router
 from app.schemas import (
     AskedItem,
     ChannelTotals,
@@ -511,6 +511,9 @@ def health():
         "telegram_configured": settings.telegram_configured,
         "admin_configured": admin_configured(),
         "mode": "webhook" if settings.use_webhook else "polling",
+        # False here while mode is "webhook" means the service is up but the
+        # bot is receiving nothing — the failure that otherwise looks healthy.
+        "webhook_registered": is_registered() if settings.use_webhook else None,
         "missing_settings": settings.missing(),
     }
 

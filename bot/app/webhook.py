@@ -28,10 +28,23 @@ telegram_router = APIRouter()
 #: to the same handlers polling uses. There is exactly one bot per process.
 _application = None
 
+#: Whether setWebhook actually succeeded. Reported by /api/health, because a
+#: service that is up but unregistered looks healthy and answers nobody.
+_registered = False
+
 
 def attach(application) -> None:
     global _application
     _application = application
+
+
+def set_registered(value: bool) -> None:
+    global _registered
+    _registered = value
+
+
+def is_registered() -> bool:
+    return _registered
 
 
 def _authentic(request: Request, secret_in_path: str) -> bool:

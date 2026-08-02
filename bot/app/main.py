@@ -35,7 +35,7 @@ async def _serve(run_bot: bool, run_api: bool) -> None:
 
     if run_bot:
         from app.telegram_bot import build_application
-        from app.webhook import attach
+        from app.webhook import attach, set_registered
 
         application = build_application()
         await application.initialize()
@@ -44,20 +44,33 @@ async def _serve(run_bot: bool, run_api: bool) -> None:
 
         if webhook_mode:
             # Deliveries arrive on the API's own port, so nothing extra listens.
-            url = settings.public_url.rstrip("/") + settings.webhook_path
-            await application.bot.set_webhook(
-                url=url,
-                secret_token=settings.telegram_webhook_secret or None,
-                allowed_updates=["message"],
-                drop_pending_updates=True,
-            )
             attach(application)
-            log.info(
-                "Bot @%s on model %s — webhook registered at %s",
-                me.username,
-                settings.groq_model,
-                settings.public_url.rstrip("/") + "/telegram/webhook/***",
-            )
+            url = settings.public_url.rstrip("/") + settings.webhook_path
+            try:
+                await application.bot.set_webhook(
+                    url=url,
+                    secret_token=settings.telegram_webhook_secret or None,
+                    allowed_updates=["message"],
+                    drop_pending_updates=True,
+                )
+                set_registered(True)
+                log.info(
+                    "Bot @%s on model %s — webhook registered at %s",
+                    me.username,
+                    settings.groq_model,
+                    settings.public_url.rstrip("/") + "/telegram/webhook/***",
+                )
+            except Exception as exc:
+                # Keep serving. A crash here means no port is opened, the host
+                # reports "no open ports detected", and that misleading message
+                # buries the real cause. Staying up keeps the health check and
+                # the panel working so the problem is visible and fixable.
+                log.error(
+                    "Could not register the webhook: %s. The API is still "
+                    "serving, but the bot will NOT receive messages until this "
+                    "is fixed and the service restarted.",
+                    exc,
+                )
         else:
             # Polling needs no public URL, which is what local development wants.
             await application.bot.delete_webhook(drop_pending_updates=True)
