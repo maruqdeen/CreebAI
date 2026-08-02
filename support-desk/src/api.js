@@ -12,6 +12,26 @@ const META_BASE = document
 
 export const API_BASE = (META_BASE ?? 'http://127.0.0.1:8000').replace(/\/$/, '')
 
+/**
+ * A bare name — no scheme, no dot — is not an address. The browser resolves it
+ * relative to this page, so every call quietly hits the static site instead of
+ * the API, which answers 200 with an empty body and produces an
+ * incomprehensible JSON parse error.
+ *
+ * Render's `fromService … property: host` yields exactly that: a service name.
+ */
+const API_BASE_LOOKS_WRONG =
+  !/^https?:\/\//.test(API_BASE) && !API_BASE.includes('.')
+
+const MISCONFIGURED =
+  `The panel is pointed at "${API_BASE}", which is not an address. ` +
+  `Set VITE_API_BASE to the API's full URL (https://…) and rebuild with the ` +
+  `build cache cleared.`
+
+if (API_BASE_LOOKS_WRONG) {
+  console.error(`[support-desk] ${MISCONFIGURED}`)
+}
+
 export class ApiError extends Error {
   constructor(message, { status = 0, offline = false, detail = null } = {}) {
     super(message)
@@ -69,6 +89,10 @@ export function toLogin() {
 }
 
 async function request(method, path, body, { anonymous = false } = {}) {
+  if (API_BASE_LOOKS_WRONG) {
+    throw new ApiError(MISCONFIGURED, { offline: true })
+  }
+
   const headers = {}
   if (body) headers['Content-Type'] = 'application/json'
   if (!anonymous && session.token) {
@@ -109,7 +133,30 @@ async function request(method, path, body, { anonymous = false } = {}) {
     throw error
   }
 
-  return response.status === 204 ? null : response.json()
+  if (response.status === 204) return null
+
+  // Parse defensively. A 2xx with an empty or non-JSON body means we are not
+  // talking to the API at all — usually a misconfigured base URL landing on a
+  // static host, which answers 200 with nothing. Letting the raw parser error
+  // through gives "Unexpected end of JSON input", which explains nothing.
+  const text = await response.text()
+  if (!text.trim()) {
+    throw new ApiError(
+      `The support service returned an empty reply from ${API_BASE}${path}. ` +
+        `Check VITE_API_BASE points at the API, not the panel.`,
+      { status: response.status }
+    )
+  }
+
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new ApiError(
+      `The support service returned something that is not JSON from ` +
+        `${API_BASE}${path}. Check VITE_API_BASE points at the API.`,
+      { status: response.status }
+    )
+  }
 }
 
 export const api = {
