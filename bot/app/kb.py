@@ -261,6 +261,18 @@ COVERAGE — THE JUDGEMENT THAT MATTERS MOST
 `covered_by_kb` is true only when the knowledge base addresses the SPECIFIC \
 situation described, not merely the same general area.
 
+ALTERNATIVE PHRASINGS
+A heading in the knowledge base often lists several ways the same question \
+gets asked, separated by "/". Read those as OR, not as one long title:
+
+    Can't Add Time/ Ads is not showing / add timer is not working / I can't add time
+
+Someone who writes ANY of those — "ads not showing", "timer not working", "i \
+can't add time" — is asking that question, and the answer beneath it covers \
+them at full confidence. Do not mark it uncovered because their wording \
+matched only one branch, or because they wrote it in their own words. The \
+whole point of the list is that the wording varies.
+
 Being in the same subject is not coverage:
 - The knowledge base explains how to connect → "how do I connect?" IS covered.
 - The knowledge base explains what to do when the app stops working → "it \

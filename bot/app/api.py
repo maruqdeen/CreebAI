@@ -64,6 +64,11 @@ log = logging.getLogger(__name__)
 
 PERIODS = {"week": 7, "month": 30}
 
+#: The `keywords.term` column width. A gate term is something that appears
+#: inside what a user types, so anything near this length is almost certainly a
+#: whole question pasted into the wrong field.
+MAX_KEYWORD_LEN = 64
+
 
 def _bearer(request: Request) -> str | None:
     header = request.headers.get("authorization") or ""
@@ -468,6 +473,19 @@ def update_settings(
         cs.product_terms = ", ".join(cleaned)
 
     if payload.keywords is not None:
+        # Validate before deleting anything: a rejected save must not leave the
+        # operator with an empty keyword list.
+        too_long = [t.strip() for t in payload.keywords if len(t.strip()) > MAX_KEYWORD_LEN]
+        if too_long:
+            raise HTTPException(
+                422,
+                f"{len(too_long)} keyword(s) are longer than {MAX_KEYWORD_LEN} "
+                f"characters, starting with “{too_long[0][:70]}…”. Keywords are "
+                f"the words a user types — “add time”, “dns”, “mtn” — not whole "
+                f"questions. Whole questions belong in the knowledge base, where "
+                f"the model reads them.",
+            )
+
         # Replace wholesale: the settings page edits the list as a whole.
         session.query(Keyword).filter(Keyword.channel == channel).delete()
         seen: set[str] = set()
