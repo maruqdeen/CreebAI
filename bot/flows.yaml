@@ -26,6 +26,17 @@ replies:
     Creeb, I'll be glad to help — or you can reach an admin directly at
     @creebadmin.
 
+  # Greets people joining the group. {name} becomes their @username, or their
+  # display name when they have none. Several joining at once are greeted
+  # together rather than one message each.
+  #
+  # Leave blank to greet nobody.
+  welcome: |
+    Hi {name}
+    Welcome to the creebspace community I'm your Ai assistant I am here to
+    guide and respond to your question & complain if you are having troubles
+    using creeb app!
+
 flows:
   - id: connection-troubleshooting
     name: VPN not connecting

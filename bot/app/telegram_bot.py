@@ -31,6 +31,7 @@ from telegram.ext import (
 
 from app.config import settings
 from app.db import SessionLocal, init_db, session_scope
+from app.flows import load_flows, render_welcome
 from app.groq_client import GroqJudge
 from app.kb import match_keywords
 from app.models import TELEGRAM, Query
@@ -387,6 +388,48 @@ async def on_private_message(update: Update, context: ContextTypes.DEFAULT_TYPE)
     )
 
 
+def display_name(user) -> str:
+    """How to address someone: their handle if they have one, else their name."""
+    if user.username:
+        return f"@{user.username}"
+    return (user.full_name or "there").strip()
+
+
+async def on_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Greet people joining the group.
+
+    Joins arrive as ordinary message updates, so nothing extra is subscribed to.
+    Several people joining at once are greeted in one message rather than one
+    each, and bots — including this one being added — are skipped.
+    """
+    message = update.effective_message
+    chat = update.effective_chat
+    if message is None or not message.new_chat_members:
+        return
+    if settings.telegram_group_chat_id and chat.id != settings.telegram_group_chat_id:
+        return
+
+    names = [display_name(u) for u in message.new_chat_members if not u.is_bot]
+    if not names:
+        return
+
+    text = render_welcome(load_flows().reply("welcome"), names)
+    if not text:
+        return  # the operator has chosen to greet nobody
+
+    try:
+        await message.reply_text(
+            text,
+            disable_web_page_preview=True,
+            # A greeting is courtesy, not news: it should not buzz every phone
+            # in the group.
+            disable_notification=True,
+        )
+        log.info("Welcomed %s to %s", ", ".join(names), chat.id)
+    except Exception:
+        log.exception("Could not post the welcome in %s", chat.id)
+
+
 async def on_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """`/start`. In a DM from the admin, this is how the bot learns to reach them."""
     chat = update.effective_chat
@@ -545,6 +588,14 @@ def build_application() -> Application:
     app.add_handler(CommandHandler("status", on_status))
     app.add_handler(CommandHandler("diag", on_diag))
     app.add_handler(CommandHandler("cancel", on_cancel))
+    # Before the general handler: a join carries no text, so it would not match
+    # anyway, but the ordering says which is which.
+    app.add_handler(
+        MessageHandler(
+            filters.StatusUpdate.NEW_CHAT_MEMBERS & filters.ChatType.GROUPS,
+            on_new_members,
+        )
+    )
     app.add_handler(
         MessageHandler(
             (filters.TEXT | filters.PHOTO | filters.VIDEO | filters.Document.ALL)

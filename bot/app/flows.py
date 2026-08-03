@@ -102,7 +102,25 @@ DEFAULT_REPLIES = {
         "using Creeb, I'll be glad to help — or you can reach an admin directly "
         "at @creebadmin."
     ),
+    "welcome": "",  # empty means greet nobody
 }
+
+
+def render_welcome(template: str, names: list[str]) -> str:
+    """Fill {name} in the welcome copy.
+
+    Uses replacement rather than str.format so an operator can write braces,
+    percent signs or anything else in their own copy without it raising.
+    """
+    if not template.strip() or not names:
+        return ""
+    if len(names) == 1:
+        who = names[0]
+    elif len(names) == 2:
+        who = f"{names[0]} and {names[1]}"
+    else:
+        who = ", ".join(names[:-1]) + f" and {names[-1]}"
+    return template.replace("{name}", who).strip()
 
 
 @dataclass
