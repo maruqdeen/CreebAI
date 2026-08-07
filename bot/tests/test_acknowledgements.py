@@ -78,7 +78,7 @@ def test_thanks_gets_a_friendly_reply(session, judge):
 
     assert result.action == REPLY
     assert "You're welcome" in result.reply_text
-    assert "@creebadmin" in result.reply_text
+    assert "@creebadminbot" in result.reply_text
     assert not judge.called, "a pleasantry must not cost a model call"
 
 

@@ -24,7 +24,7 @@ replies:
   thanks: |
     You're welcome. If you have any other question or run into any issue using
     Creeb, I'll be glad to help — or you can reach an admin directly at
-    @creebadmin.
+    @creebadminbot.
 
   # Greets people joining the group. {name} becomes their @username, or their
   # display name when they have none. Several joining at once are greeted
@@ -126,6 +126,6 @@ flows:
           This is beyond what I can answer — I've logged it for an admin with
           everything you've told me.
 
-          For a faster reply, message @creebadmin directly with the screenshot
+          For a faster reply, message @creebadminbot directly with the screenshot
           you provided, for follow-up.
         end: escalate

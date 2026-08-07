@@ -139,7 +139,7 @@ def test_the_full_script_runs_as_written(session, judge):
     fourth = handle(msg("here it is", has_photo=True), session, judge)
     assert fourth.action == REPLY
     assert "beyond what I can answer" in fourth.reply_text
-    assert "@creebadmin" in fourth.reply_text
+    assert "@creebadminbot" in fourth.reply_text
 
 
 def test_a_described_problem_the_kb_covers_is_answered_not_handed_over(session, judge):
@@ -164,7 +164,7 @@ def test_a_described_problem_the_kb_covers_is_answered_not_handed_over(session, 
 
     assert answered.action == REPLY
     assert "Switch to another tweak option" in answered.reply_text
-    assert "@creebadmin" not in answered.reply_text
+    assert "@creebadminbot" not in answered.reply_text
     assert session.scalar(select(Conversation)).state == FINISHED
     assert session.scalar(select(Query)) is None, "answered, so nothing to escalate"
 

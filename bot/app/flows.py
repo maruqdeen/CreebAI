@@ -100,7 +100,7 @@ DEFAULT_REPLIES = {
     "thanks": (
         "You're welcome. If you have any other question or run into any issue "
         "using Creeb, I'll be glad to help — or you can reach an admin directly "
-        "at @creebadmin."
+        "at @creebadminbot."
     ),
     "welcome": "",  # empty means greet nobody
 }
